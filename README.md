@@ -3,7 +3,7 @@
 ![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)
 ![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D4)
 ![Frontend](https://img.shields.io/badge/frontend-vanilla%20JS-f7df1e)
-![Version](https://img.shields.io/badge/version-1.0.5-2ea44f)
+![Version](https://img.shields.io/badge/version-1.0.6-2ea44f)
 
 面向 Windows 10 老笔记本的家用服务器状态监视系统：
 
@@ -16,7 +16,7 @@
 示例访问地址：`https://monitor.example.com`（由 Caddy/Nginx 做 TLS 终止，请替换为你自己的域名）
 默认监听：`http://0.0.0.0:8080`，局域网访问示例 `http://192.168.1.10:8080`
 
-> **1.0.5 修复**：升级安装不再因 `config.json` / `Caddyfile` 权限被拒失败。安装器先 `takeown` + `icacls /reset`，只对目录授权，子项通过继承获得权限；写入时清除只读属性，必要时退化为原地写入。
+> **1.0.6 安装器修复**：配置暂时不可读时不再把整个安装判为“注册服务失败”；`install-service.ps1` 自带 `takeown`，可独立修复被清空的 ACL；安装日志开头会打印安装器与脚本版本，避免版本混淆。
 >
 > **1.0.3 更新**：CPU 主环改为“有效占用”（PDH `% Processor Utility`，与任务管理器同口径），下方小字保留时间占用；新增 `cpu.utility` 历史、字段级缺失诊断、PawnIO 服务状态、GPU 活跃卡选择、安装目录权限收紧。
 
@@ -539,7 +539,7 @@ netstat -ano | findstr :8080
 
 ### 安装失败：Access to the path '...\config.json' is denied
 
-升级安装时，如果旧 `config.json` 被设为只读，或被手工 ACL 限制成只有 SYSTEM 可访问，安装器写配置会失败。1.0.5 起安装器会先 `takeown` + 重置并收紧目录 ACL 再写配置；如果仍然失败，用管理员 PowerShell 执行：
+升级安装时，如果旧 `config.json` 被设为只读，或被手工 ACL 限制成只有 SYSTEM 可访问，安装器写配置会失败。1.0.6 起安装器会先 `takeown` + 重置并收紧目录 ACL 再写配置；如果仍然失败，用管理员 PowerShell 执行：
 
 ```powershell
 takeown /f "D:\Program Files\HpserverMonitor" /r /d y

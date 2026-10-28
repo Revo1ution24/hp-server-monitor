@@ -8,7 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>HpServerMonitorSetup</AssemblyName>
     <RootNamespace>HpServerMonitor.Installer</RootNamespace>
-    <Version>1.0.5</Version>
+    <Version>1.0.6</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>$(MSBuildThisFileDirectory)..\..\assets\app.ico</ApplicationIcon>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>

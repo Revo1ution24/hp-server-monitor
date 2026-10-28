@@ -34,6 +34,7 @@ public static class InstallEngine
 
         await Task.Run(async () =>
         {
+            log.Report($"安装器版本：{typeof(InstallEngine).Assembly.GetName().Version?.ToString(3) ?? "unknown"}");
             log.Report($"安装目录：{dir}");
 
             // 1. 先停掉旧服务/任务，避免 exe 被占用
@@ -74,7 +75,7 @@ public static class InstallEngine
 
                 var install = RunServiceScript("Install", dir, InstallerState.OpenFirewall, log, "-Mode", mode);
                 if (install.Code != 0)
-                    throw new InvalidOperationException("注册服务失败：\n" + Tail(install.Output));
+                    throw new InvalidOperationException("服务安装脚本失败（install-service.ps1）：\n" + Tail(install.Output));
 
                 result.Started = true;
             }
@@ -207,6 +208,8 @@ public static class InstallEngine
         using (var file = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
             stream.CopyTo(file);
 
+        // 旧的临时脚本可能被设成只读，先清属性再覆盖
+        ClearReadOnly(targetPath);
         File.Move(temp, targetPath, overwrite: true);
     }
 

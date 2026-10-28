@@ -31,6 +31,7 @@ $ErrorActionPreference = 'Stop'
 
 $serviceName = 'HpServerMonitor'
 $taskName = 'HpServerMonitor'
+$scriptVersion = '1.0.6'
 
 function Assert-Administrator {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -64,6 +65,9 @@ function Set-RestrictedPermissions {
         return
     }
 
+    # 先接管目录：即使旧 ACL 被清空、当前管理员不是所有者，也能继续改 DACL
+    & takeown.exe /f $full /r /d y | Out-Null
+
     # 先把目录和子项重置为继承默认值：修复历史遗留的显式 ACL / 空 DACL
     & icacls.exe $full /reset /T /C | Out-Null
 
@@ -91,14 +95,17 @@ function Get-ExePath {
 
 function Get-HttpPort {
     $configPath = Join-Path $InstallDir 'config.json'
-    if (Test-Path $configPath) {
-        try {
-            $config = Get-Content $configPath -Raw | ConvertFrom-Json
+    try {
+        if (Test-Path -LiteralPath $configPath -ErrorAction Stop) {
+            $config = Get-Content -LiteralPath $configPath -Raw -ErrorAction Stop | ConvertFrom-Json
             if ($null -ne $config.server -and $config.server.httpPort) {
                 return [int]$config.server.httpPort
             }
         }
-        catch { }
+    }
+    catch {
+        # 配置暂时不可读时不要中断安装，回退默认端口即可
+        Write-Host "Warning: cannot read $configPath, fallback to 8080: $($_.Exception.Message)" -ForegroundColor Yellow
     }
     return 8080
 }
@@ -235,6 +242,7 @@ function Show-Status {
 }
 
 Assert-Administrator
+Write-Host "install-service.ps1 v$scriptVersion" -ForegroundColor DarkGray
 
 switch ($Action) {
     'Install' {
