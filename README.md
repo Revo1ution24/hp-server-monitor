@@ -3,7 +3,7 @@
 ![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)
 ![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D4)
 ![Frontend](https://img.shields.io/badge/frontend-vanilla%20JS-f7df1e)
-![Version](https://img.shields.io/badge/version-1.0.3-2ea44f)
+![Version](https://img.shields.io/badge/version-1.0.4-2ea44f)
 
 面向 Windows 10 老笔记本的家用服务器状态监视系统：
 
@@ -16,6 +16,8 @@
 示例访问地址：`https://monitor.example.com`（由 Caddy/Nginx 做 TLS 终止，请替换为你自己的域名）
 默认监听：`http://0.0.0.0:8080`，局域网访问示例 `http://192.168.1.10:8080`
 
+> **1.0.4 修复**：升级安装时不再因 `config.json` 只读或权限受限报 `Access to the path ... is denied`；安装器写配置前会先 `takeown` + 重置并收紧目录 ACL，必要时退化为原地写入。
+>
 > **1.0.3 更新**：CPU 主环改为“有效占用”（PDH `% Processor Utility`，与任务管理器同口径），下方小字保留时间占用；新增 `cpu.utility` 历史、字段级缺失诊断、PawnIO 服务状态、GPU 活跃卡选择、安装目录权限收紧。
 
 ---
@@ -534,6 +536,21 @@ netstat -ano | findstr :8080
 - 查看“事件查看器 → Windows 日志 → 应用程序”；
 - 确认 `config.json` 是合法 JSON（支持注释与尾逗号）；
 - 确认 exe 路径、目录写权限正常。
+
+### 安装失败：Access to the path '...\config.json' is denied
+
+升级安装时，如果旧 `config.json` 被设为只读，或被手工 ACL 限制成只有 SYSTEM 可访问，安装器写配置会失败。1.0.4 起安装器会先 `takeown` + 重置并收紧目录 ACL 再写配置；如果仍然失败，用管理员 PowerShell 执行：
+
+```powershell
+takeown /f "D:\Program Files\HpserverMonitor" /r /d y
+icacls "D:\Program Files\HpserverMonitor" /reset /T /C
+icacls "D:\Program Files\HpserverMonitor" /inheritance:r /grant:r "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F" /T
+attrib -R "D:\Program Files\HpserverMonitor\config.json"
+```
+
+然后重新运行安装向导；也可以直接换一个新目录安装。
+
+> `config.json` 里有 JWT 密钥与密码哈希，收紧到 SYSTEM/Administrators 是预期行为，不要为了让普通用户可写而放开 Users 权限。
 
 ### 浏览器一直显示“连接中断”
 

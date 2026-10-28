@@ -103,8 +103,29 @@ public sealed class ConfigStore
             var json = JsonSerializer.Serialize(config, JsonDefaults.Config);
             var temp = _paths.ConfigPath + ".tmp";
             File.WriteAllText(temp, json);
-            File.Move(temp, _paths.ConfigPath, overwrite: true);
+            try
+            {
+                ClearReadOnly(_paths.ConfigPath);
+                File.Move(temp, _paths.ConfigPath, overwrite: true);
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+            {
+                // 旧版文档建议过只读/仅 R,W 的 ACL，Move 覆盖会因缺少 DELETE 失败
+                try { File.Delete(temp); } catch { }
+                ClearReadOnly(_paths.ConfigPath);
+                File.WriteAllText(_paths.ConfigPath, json);
+            }
         }
+    }
+
+    private static void ClearReadOnly(string path)
+    {
+        if (!File.Exists(path))
+            return;
+
+        var attributes = File.GetAttributes(path);
+        if ((attributes & FileAttributes.ReadOnly) != 0)
+            File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
     }
 
     private static string GeneratePassword(int length)

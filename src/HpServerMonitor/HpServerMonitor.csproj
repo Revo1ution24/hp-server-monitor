@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>HpServerMonitor</RootNamespace>
     <AssemblyName>HpServerMonitor</AssemblyName>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <ApplicationIcon>$(MSBuildThisFileDirectory)..\..\assets\app.ico</ApplicationIcon>
     <InvariantGlobalization>false</InvariantGlobalization>
     <ServerGarbageCollection>false</ServerGarbageCollection>

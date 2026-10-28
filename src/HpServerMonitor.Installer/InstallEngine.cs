@@ -46,6 +46,7 @@ public static class InstallEngine
 
             // 2. 目录与文件
             Directory.CreateDirectory(dir);
+            RepairPermissions(dir, log.Report);
             Directory.CreateDirectory(Path.Combine(dir, "logs"));
             log.Report("释放主程序 HpServerMonitor.exe……");
             ExtractResource("HpServerMonitor.exe", Path.Combine(dir, "HpServerMonitor.exe"));
@@ -304,9 +305,82 @@ public static class InstallEngine
 
         var temp = path + ".tmp";
         File.WriteAllText(temp, json, new UTF8Encoding(false));
-        File.Move(temp, path, overwrite: true);
+        ReplaceFile(temp, path, json);
 
         return generated;
+    }
+
+    /// <summary>
+    /// 旧版本或手工 icacls 可能把 config.json 设成只读/仅 SYSTEM，导致升级时
+    /// temp + Move 覆盖失败。这里先清只读属性，仍失败则退化为原地写入。
+    /// </summary>
+    private static void ReplaceFile(string temp, string path, string content)
+    {
+        try
+        {
+            ClearReadOnly(path);
+            File.Move(temp, path, overwrite: true);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+        {
+            TryDelete(temp);
+            ClearReadOnly(path);
+            File.WriteAllText(path, content, new UTF8Encoding(false));
+        }
+    }
+
+    private static void ClearReadOnly(string path)
+    {
+        if (!File.Exists(path))
+            return;
+
+        var attributes = File.GetAttributes(path);
+        if ((attributes & FileAttributes.ReadOnly) != 0)
+            File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
+    }
+
+    /// <summary>
+    /// 升级前先接管并把 ACL 重置为继承默认值，修复上一版 ACL 或手工设置留下的
+    /// “仅 SYSTEM / 缺少 DELETE”导致写入 config.json 失败的问题。
+    /// 服务/计划任务模式的最终收紧仍由 install-service.ps1 完成。
+    /// </summary>
+    private static void RepairPermissions(string dir, Action<string> log)
+    {
+        var full = Path.GetFullPath(dir).TrimEnd(Path.DirectorySeparatorChar);
+        var root = Path.GetPathRoot(full)?.TrimEnd(Path.DirectorySeparatorChar);
+
+        if (string.Equals(full, root, StringComparison.OrdinalIgnoreCase) || IsProtectedDirectory(full))
+        {
+            log("安装目录位于受保护位置，跳过权限修复。");
+            return;
+        }
+
+        log("修复安装目录权限……");
+        Shell.Run("takeown.exe", "/f", full, "/r", "/d", "y");
+        var reset = Shell.Run("icacls.exe", full, "/reset", "/T", "/C");
+        if (reset.Code == 0)
+            log("安装目录权限已重置为继承默认值。");
+        else
+            log("  icacls /reset 返回 " + reset.Code + "：" + Tail(reset.Output));
+    }
+
+    private static bool IsProtectedDirectory(string full)
+    {
+        string[] protectedPaths =
+        {
+            Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+        };
+
+        return protectedPaths
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Any(path => string.Equals(
+                Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar),
+                full,
+                StringComparison.OrdinalIgnoreCase));
     }
 
     private static void AddPortRule(int port, string displayName, Action<string> log)
