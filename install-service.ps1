@@ -64,10 +64,21 @@ function Set-RestrictedPermissions {
         return
     }
 
-    # S-1-5-18 = SYSTEM，S-1-5-32-544 = Administrators；用 SID 避免系统语言差异
-    & icacls.exe $full /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' /T /C | Out-Null
+    # 先把目录和子项重置为继承默认值：修复历史遗留的显式 ACL / 空 DACL
+    & icacls.exe $full /reset /T /C | Out-Null
+
+    # 再给目录加显式权限。注意不要对 /grant 使用 /T：
+    # (OI)(CI) 是目录专用标志，直接套到文件上会把文件 ACL 清空。
+    & icacls.exe $full /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' /C | Out-Null
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "Warning: failed to restrict ACL on $full (icacls exit $LASTEXITCODE)" -ForegroundColor Yellow
+        Write-Host "Warning: failed to grant ACL on $full (icacls exit $LASTEXITCODE); keep inherited permissions" -ForegroundColor Yellow
+        return
+    }
+
+    # 最后只去掉目录本身的继承；子项保留从显式 ACE 继承来的 F
+    & icacls.exe $full /inheritance:r /C | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Warning: failed to remove inheritance on $full (icacls exit $LASTEXITCODE)" -ForegroundColor Yellow
     }
     else {
         Write-Host "Restricted ACL to SYSTEM/Administrators: $full" -ForegroundColor Cyan
