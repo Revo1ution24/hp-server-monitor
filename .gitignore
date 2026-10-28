@@ -1,0 +1,8 @@
+bin/
+obj/
+dist/
+logs/
+config.json
+.trae-html-share-packages/
+*.user
+*.suo

@@ -1,0 +1,33 @@
+{
+  "server": {
+    "bind": "0.0.0.0",
+    "httpPort": 8080,
+    "httpsEnabled": false,
+    "httpsPort": 5443,
+    "certPath": "",
+    "certPassword": ""
+  },
+  "auth": {
+    "username": "admin",
+    "password": "",
+    "passwordHash": "",
+    "jwtSecret": "",
+    "tokenHours": 12
+  },
+  "sampling": {
+    "intervalMs": 1000,
+    "storageIntervalMs": 5000,
+    "slowInfoSeconds": 60,
+    "historyPoints": 3600
+  },
+  "security": {
+    "loginMaxAttempts": 5,
+    "loginWindowSeconds": 60
+  },
+  "logging": {
+    "directory": "logs",
+    "maxFileSizeMb": 10,
+    "maxFiles": 3,
+    "minimumLevel": "Information"
+  }
+}

@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>HpServerMonitorSetup</AssemblyName>
+    <RootNamespace>HpServerMonitor.Installer</RootNamespace>
+    <Version>1.0.3</Version>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>$(MSBuildThisFileDirectory)..\..\assets\app.ico</ApplicationIcon>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <SatelliteResourceLanguages>zh-Hans</SatelliteResourceLanguages>
+    <!-- 主程序 exe 作为载荷内嵌，安装器自身即完整的单文件 Setup.exe -->
+    <PayloadExe Condition="'$(PayloadExe)' == ''">$(MSBuildThisFileDirectory)..\..\dist\HpServerMonitor.exe</PayloadExe>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="$(PayloadExe)"
+                      LogicalName="Payload.HpServerMonitor.exe"
+                      Condition="Exists('$(PayloadExe)')" />
+    <!-- 复用仓库里已验证的服务注册/防火墙脚本 -->
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)..\..\install-service.ps1"
+                      LogicalName="Payload.install-service.ps1" />
+    <!-- 可选：带 dynv6 插件的 Caddy（DNS-01 用），放在 dist\ 下就会自动内嵌 -->
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)..\..\dist\caddy-dynv6.exe"
+                      LogicalName="Payload.caddy-dynv6.exe"
+                      Condition="Exists('$(MSBuildThisFileDirectory)..\..\dist\caddy-dynv6.exe')" />
+  </ItemGroup>
+
+  <Target Name="EnsurePayload" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(PayloadExe)')"
+           Text="找不到主程序载荷：$(PayloadExe)。请先运行 build.ps1 生成 dist\HpServerMonitor.exe，或用 -p:PayloadExe=路径 指定。" />
+    <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\..\install-service.ps1')"
+           Text="找不到 install-service.ps1，安装器依赖它完成服务注册。" />
+  </Target>
+
+</Project>

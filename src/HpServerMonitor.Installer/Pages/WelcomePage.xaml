@@ -1,0 +1,48 @@
+<Page x:Class="HpServerMonitor.Installer.WelcomePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="Transparent" Title="欢迎">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="40,28,40,28">
+
+            <TextBlock Text="HP Server Monitor" Style="{StaticResource H1Text}" />
+            <TextBlock Text="老笔记本家用服务器状态监视 · 图形化安装向导"
+                       Style="{StaticResource MutedText}" FontSize="13.5" Margin="0,6,0,22" />
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="这个向导会完成" Style="{StaticResource H2Text}" />
+                    <TextBlock Style="{StaticResource BodyText}" Margin="0,0,0,6"
+                               Text="· 释放自包含主程序，目标机无需安装 .NET" />
+                    <TextBlock Style="{StaticResource BodyText}" Margin="0,0,0,6"
+                               Text="· 配置监听地址、端口与管理员账号（密码以 PBKDF2 哈希写入）" />
+                    <TextBlock Style="{StaticResource BodyText}" Margin="0,0,0,6"
+                               Text="· 注册 Windows 服务或开机计划任务，可选开放防火墙" />
+                    <TextBlock Style="{StaticResource BodyText}"
+                               Text="· 可选生成 Caddy 反向代理配置，用于 HTTPS 访问" />
+                </StackPanel>
+            </Border>
+
+            <Border x:Name="ExistingCard" Style="{StaticResource Card}"
+                    Background="#FFF8EC" BorderBrush="#F0D9AC" Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock Text="检测到已有安装" FontWeight="SemiBold" Foreground="#8A5A00"
+                               Margin="0,0,0,6" />
+                    <TextBlock x:Name="ExistingText" Style="{StaticResource MutedText}"
+                               Foreground="#7A5A20" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="开始之前" Style="{StaticResource H2Text}" />
+                    <TextBlock Style="{StaticResource MutedText}"
+                               Text="安装和配置需要管理员权限。若需要 CPU 温度、功耗和风扇转速，请另外安装 PawnIO 驱动并重启系统，否则这些传感器会显示 N/A。" />
+                </StackPanel>
+            </Border>
+
+            <Button Content="卸载已有安装" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Left"
+                    Margin="0,4,0,0" Click="Uninstall_Click" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>
